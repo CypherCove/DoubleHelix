@@ -13,6 +13,6 @@ You may compile the project as is for your personal use, but do not redistribute
 ### Building
 This project was built with IntelliJ IDEA. You might be able to get it working in Eclipse using a Gradle plugin.
 
-This project uses [LibGDX](http://www.libgdx.com/), which will be imported by the Gradle files. It does expect you to have the Cypher Cove LWPTools library in a sibling directory to this project, in a folder named LWPTools.
+This project uses [LibGDX](http://www.libgdx.com/), which will be imported by the Gradle files. It expects you to have the [Cypher Cove LWPTools](http://github.com/CypherCove/LWPTools) library in a sibling directory to this project, in a directory named LWPTools.
 
-There is a desktop module included, which allows you to test the live wallpaper on the desktop without having to run it in Android. You can look up instructions for setting that up in the LibGDX documentation.
+There is a desktop module included, which allows you to test the live wallpaper on the desktop without having to run it in Android. You can look up instructions for setting that up in the [LibGDX documentation](http://github.com/libgdx/libgdx/wiki/Gradle-and-Intellij-IDEA).
