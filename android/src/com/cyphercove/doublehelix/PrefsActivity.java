@@ -176,7 +176,7 @@ public class PrefsActivity extends PreferenceActivity implements OnSharedPrefere
 					editor.putBoolean("ratePressed", true);
 					editor.commit();
 					String url = IS_AMAZON? "amzn://apps/android?p=com.cyphercove.doublehelix" :
-                            "market://details?id=" + PrefsActivity.this.getPackageName();
+                            "market://details?id=com.cyphercove.doublehelix";
 					Intent i = new Intent(Intent.ACTION_VIEW);
 					i.setData(Uri.parse(url));
 					startActivity(i);
