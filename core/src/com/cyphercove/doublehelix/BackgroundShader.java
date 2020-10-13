@@ -13,57 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-
 package com.cyphercove.doublehelix;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.Shader;
 import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
 
+/**
+ * Used to draw the background ("skybox") model.
+ */
 public class BackgroundShader implements Shader {
-	Texture texture;
-	ShaderProgram program;
 
-	int u_texture, u_color, u_modelViewProjTrans, u_ambient;
+	private Assets assets;
+	private final Matrix4 tmpMat = new Matrix4();
+	private final Matrix4 viewProjTrans = new Matrix4();
 
-    final Color color = new Color();
-
-	public BackgroundShader(Texture texture){
-		this.texture = texture;
+	public BackgroundShader(Assets assets){
+		this.assets = assets;
 	}
 
 	@Override
 	public void init() {
-		reloadShader();
 	}
-
-    public void reloadShader (){
-        if (program != null)
-            program.dispose();
-
-        final String prefix = "glow";
-        String vert = Gdx.files.internal(prefix + "_vs.glsl").readString();
-        String frag = Gdx.files.internal(prefix + "_fs.glsl").readString();
-        program = new ShaderProgram(vert, frag);
-		if (!program.isCompiled())
-			Gdx.app.log("Shader error", program.getLog());
-
-        u_texture = program.getUniformLocation("u_texture");
-        u_color = program.getUniformLocation("u_color");
-        u_ambient = program.getUniformLocation("u_ambient");
-        u_modelViewProjTrans = program.getUniformLocation("u_modelViewProjTrans");
-    }
 
 	@Override
 	public void dispose() {
-		program.dispose();
 	}
 
 	@Override
@@ -77,39 +56,37 @@ public class BackgroundShader implements Shader {
 	}
 
 
-	Matrix4 tmpMat = new Matrix4();
-	Matrix4 viewProjTrans = new Matrix4();
 
 	@Override
 	public void begin(Camera camera, RenderContext context) {
         context.setDepthTest(GL20.GL_NONE);
 
-		program.begin();
+        ShaderProgram program = assets.backgroundShader;
+
+		program.bind();
 		viewProjTrans.set(camera.combined);
 
 		context.setCullFace(GL20.GL_BACK);
 		context.setBlending(false, GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
-		texture.bind(0);
-		program.setUniformi(u_texture, 0);
+		assets.backgroundTexture.bind(0);
+		program.setUniformi("u_texture", 0);
 
-        program.setUniformf(u_color, color.r, color.g, color.b);
-        program.setUniformf(u_ambient, MainRenderer.AMBIENT_BRIGHTNESS);
+		Color color = Settings.backgroundColor;
+        program.setUniformf("u_color", color.r, color.g, color.b);
+        program.setUniformf("u_ambient", MainRenderer.AMBIENT_BRIGHTNESS);
 	}
+
 
 	@Override
 	public void render(Renderable renderable) {
 		tmpMat.set(renderable.worldTransform).mulLeft(viewProjTrans);
-		program.setUniformMatrix(u_modelViewProjTrans, tmpMat);
+		assets.backgroundShader.setUniformMatrix("u_modelViewProjTrans", tmpMat);
 
-		renderable.mesh.render(program,
-				renderable.primitiveType,
-				renderable.meshPartOffset,
-				renderable.meshPartSize);
+		renderable.meshPart.render(assets.backgroundShader);
 	}
 
 	@Override
 	public void end() {
-		program.end();
 	}
 }

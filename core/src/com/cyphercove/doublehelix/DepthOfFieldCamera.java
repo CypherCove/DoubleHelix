@@ -17,10 +17,11 @@
 package com.cyphercove.doublehelix;
 
 import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 
 /**
- * Created by Darren on 9/7/2015.
+ * PerspectiveCamera with properties and methods for calculating depth of field values.
  */
 public class DepthOfFieldCamera extends PerspectiveCamera {
 
@@ -28,6 +29,20 @@ public class DepthOfFieldCamera extends PerspectiveCamera {
     private float focalPlane;
     private float aperture;
     private CircleOfConfusion circleOfConfusion;
+
+    private final Matrix4 tmp = new Matrix4();
+
+    @Override
+    public void update (boolean updateFrustum) {
+        super.update(updateFrustum);
+
+        if (Settings.flipH || Settings.flipV){
+            tmp.idt().scale(Settings.flipH ? -1f : 1f, Settings.flipV ? -1f : 1f, 1f);
+            projection.mul(tmp);
+            combined.set(projection).mul(view);
+        }
+
+    }
 
     private class CircleOfConfusion {
         static final int COUNT = 16000;

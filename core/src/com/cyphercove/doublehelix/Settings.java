@@ -18,25 +18,27 @@ package com.cyphercove.doublehelix;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
-import com.cyphercove.lwptools.core.ColorUtil;
+import com.cyphercove.covetools.utils.ColorUtil;
 
 /**
- * Created by Darren on 9/6/2015.
+ * The user-adjustable settings. This is static to avoid having to pass objects back and forth
+ * between the modules. It must only be modified from the OpenGL thread.
  */
 public class Settings {
     public static boolean dof = true;
     public static boolean bloom = true;
-    public static boolean filmGrain = false;
-    public static boolean vignette = false;
-    public static boolean scanLines = true;
-    public static boolean smoothScrolling = true;
+    public static boolean filmGrain = true;
+    public static boolean vignette = true;
+    public static boolean scanLines = false;
     public static boolean pseudoScrolling = true;
     public static boolean pointParticles = false; //invisible in portrait if FOV_PORT > ~50
     public static boolean trilinearParticles = true;
+    public static boolean chromaticAberration = true;
     public static int numParticles = 1000;
-    public static float speed = 0.50f;
+    public static float speed = 0.05f;
+    public static boolean flipH = false, flipV = false;
     static final Color backgroundColor = new Color(0x0f3466ff);
-    static final Color frontHelixColor = new Color(0x0e4c89ff);//0a3661 old blue   982727 red   549a50 green
+    static final Color frontHelixColor = new Color(0x0e4c89ff);
     static final Color rearHelixColor = new Color(0x185a9dff);
 
     static {
@@ -54,7 +56,7 @@ public class Settings {
         updateColorsFromFrontHelixColor();
     }
 
-    public static final void updateColorsFromFrontHelixColor(){
+    public static void updateColorsFromFrontHelixColor(){
         backgroundColor.set(frontHelixColor);
         ColorUtil.shiftHue(backgroundColor, 0.007f);
         ColorUtil.scaleSaturation(backgroundColor, 1.03f);
@@ -72,9 +74,7 @@ public class Settings {
     private static int screenshotResolutionIdx = -1;
     public static void advanceScreenshotResolution (){
         screenshotResolutionIdx = (screenshotResolutionIdx + 1) % screenshotResolutions.length;
-        Gdx.graphics.setDisplayMode(
-                screenshotResolutions[screenshotResolutionIdx][0],
-                screenshotResolutions[screenshotResolutionIdx][1],
-                false);
+        Gdx.graphics.setWindowedMode(screenshotResolutions[screenshotResolutionIdx][0],
+                screenshotResolutions[screenshotResolutionIdx][1]);
     }
 }

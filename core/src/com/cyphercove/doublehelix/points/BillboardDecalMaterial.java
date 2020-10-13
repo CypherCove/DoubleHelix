@@ -20,9 +20,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
-/**
- * Created by Darren on 9/20/2015.
- */
 public class BillboardDecalMaterial {
     public static final int NO_BLEND = -1;
     protected Texture texture;

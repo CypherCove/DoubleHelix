@@ -20,16 +20,13 @@ import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.assets.AssetManager;
-import com.badlogic.gdx.assets.loaders.TextureLoader;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.Environment;
-import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
@@ -37,25 +34,19 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.cyphercove.covetools.android.LiveWallpaperAdapter;
+import com.cyphercove.covetools.graphics.FullScreenFader;
+import com.cyphercove.covetools.graphics.FullScreenQuad;
+import com.cyphercove.covetools.graphics.GaussianBlur;
+import com.cyphercove.covetools.graphics.ResizableFrameBuffer;
 import com.cyphercove.doublehelix.points.BillboardDecalBatch;
-import com.cyphercove.lwptools.core.FullScreenFader;
-import com.cyphercove.lwptools.core.GaussianBlur;
-import com.cyphercove.lwptools.core.GaussianBlurShaderProvider;
-import com.cyphercove.lwptools.core.LiveWallpaperBaseRenderer;
 
-public class MainRenderer implements LiveWallpaperBaseRenderer {
-
-    private static final String HELIX_MODEL = "helix.g3db";
-    private static final String HELIX_NORMAL_AO_TEXTURE = "helix-normal-ao.png";
-    private static final String BG_MODEL = "bg.g3db";
-    private static final String BG_BLOOM_MODEL = "bg_bloom.g3db";
-    private static final String BG_GLOW_TEXTURE = "bg.png";
-    private static final String BG_BLOOM_TEXTURE = "bloom_source.png";
-    private static final String POINT_PARTICLE_TEXTURE = "particlePoint.png";
-    private static final String PARTICLE_A_TEXTURE = "particleA.png";
-    private static final String FILM_BORDER_TEXTURE= "filmBorder.png";
-    private static final String FILM_NOISE_TEXTURE= "filmNoise.png";
-    private static final String SCANLINE_TEXTURE= "scanlines.png";
+/**
+ * Main libGDX entry point for the live wallpaper. It uses CoveTools' LiveWallpaperAdapter to
+ * support desktop testing of the live wallpaper. The input listener allows toggling of settings and
+ * hot reloading of shaders using the keyboard.
+ */
+public class MainRenderer extends LiveWallpaperAdapter {
 
     public static final float FOV_LAND = 37.7f;
     public static final float FOV_PORT = 55f;
@@ -72,10 +63,10 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
     public DepthOfFieldCamera cam;
     ModelBatch modelBatch;
     public Environment environment;
-    AssetManager assets;
+    Assets assets;
+    AssetManager assetManager;
 
     SubsurfaceScatteringShader sssShader;
-    Texture helixNormalAOTexture;
     ModelInstance mainHelixModelInstance;
     TransformManager mainHelixTransformManager;
     ModelInstance rearHelixModelInstance;
@@ -83,15 +74,10 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
 
     ModelInstance backgroundModelInstance;
     BackgroundShader backgroundShader;
-    Texture backgroundTexture;
     ModelInstance backgroundBloomModelInstance;
     UnlitShader unlitShader;
-    Texture backgroundBloomTexture;
     BlackShader blackShader;
-    ShaderProgram bloomShaderProgram;
 
-    Texture particleATexture;
-    Texture particlePointTexture;
     TextureRegion particleATextureRegion;
     Particles particles;
     DecalBatch decalBatch;
@@ -100,9 +86,10 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
 
     GaussianBlur bloom;
     GaussianBlur rearDOFBlur;
+    ResizableFrameBuffer chromaticBuffer;
+    FullScreenQuad chromaticQuad;
 
-    FilmGrain filmGrain;
-    FilmGrain filmGrainForBloom;
+    EffectsOverlay effectsOverlay;
 
     FullScreenFader fader;
     boolean needFinishCreate; //used to postpone loading so daydream gets nice pre-fade
@@ -111,7 +98,7 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
     boolean screenshotPause = false;
 
     Array<Disposable> disposables = new Array<Disposable>(15);
-    public interface SettingsAdapter{
+    public interface SettingsAdapter {
         void updateAllSettings();
         void updateInLoop(float deltaTime);
     }
@@ -132,15 +119,12 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
         fader = new FullScreenFader(0, 1.5f);
         disposables.add(fader);
 
-        GaussianBlurShaderProvider gaussianBlurShaderProvider = new GaussianBlurShaderProvider();
-
-        bloom = new GaussianBlur(8f, false, true, gaussianBlurShaderProvider);
-        bloom.setClearColor(Color.BLACK);
+        bloom = new GaussianBlur(8f, false, true);
         bloom.setDepthTestingToScene(false);
         bloom.setBlending(true, GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA);
         disposables.add(bloom);
 
-        rearDOFBlur = new GaussianBlur(8f, true, true, gaussianBlurShaderProvider);
+        rearDOFBlur = new GaussianBlur(8f, true, true);
         rearDOFBlur.setDepthTestingToScene(true);
         rearDOFBlur.setBlending(false, 0, 0);
         disposables.add(rearDOFBlur);
@@ -150,14 +134,12 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
         needFinishCreate = true;
         firstFrameDrawn = false;
 
-        //Enable point rendering for use when flake particles setting is off.
         Gdx.gl.glEnable(GL20.GL_VERTEX_PROGRAM_POINT_SIZE);
         if(Gdx.app.getType() == Application.ApplicationType.Desktop) {
             Gdx.gl.glEnable(0x8861); // GL_POINT_OES
         }
     }
 
-    //Defer most loading until first frame is drawn so it can quickly start when used as a daydream
     private void finishCreate(){
         needFinishCreate = false;
 
@@ -166,110 +148,50 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
 
         environment = new Environment();
 
-        assets = new AssetManager();
+        assets = new Assets();
         disposables.add(assets);
 
-        TextureLoader.TextureParameter trilinearRepeatTextureParams = new TextureLoader.TextureParameter();
-        trilinearRepeatTextureParams.format = Pixmap.Format.RGBA8888;
-        trilinearRepeatTextureParams.magFilter = Texture.TextureFilter.Linear;
-        trilinearRepeatTextureParams.minFilter = Texture.TextureFilter.MipMapLinearLinear;
-        trilinearRepeatTextureParams.wrapU = Texture.TextureWrap.Repeat;
-        trilinearRepeatTextureParams.wrapV = Texture.TextureWrap.Repeat;
-        trilinearRepeatTextureParams.genMipMaps = true;
-        assets.load(HELIX_NORMAL_AO_TEXTURE, Texture.class, trilinearRepeatTextureParams);
-        assets.load(PARTICLE_A_TEXTURE, Texture.class, trilinearRepeatTextureParams);
+        assetManager = new AssetManager();
+        disposables.add(assetManager);
 
-        TextureLoader.TextureParameter bilinearClampedTextureParams = new TextureLoader.TextureParameter();
-        bilinearClampedTextureParams.format = Pixmap.Format.RGBA8888;
-        bilinearClampedTextureParams.magFilter = Texture.TextureFilter.Linear;
-        bilinearClampedTextureParams.minFilter = Texture.TextureFilter.MipMapLinearNearest;
-        bilinearClampedTextureParams.wrapU = Texture.TextureWrap.ClampToEdge;
-        bilinearClampedTextureParams.wrapV = Texture.TextureWrap.ClampToEdge;
-        bilinearClampedTextureParams.genMipMaps = true;
-        assets.load(BG_GLOW_TEXTURE, Texture.class, bilinearClampedTextureParams);
-        assets.load(BG_BLOOM_TEXTURE, Texture.class, bilinearClampedTextureParams);
-        assets.load(POINT_PARTICLE_TEXTURE, Texture.class, bilinearClampedTextureParams);
+        assetManager.finishLoading();
 
-        TextureLoader.TextureParameter borderTexParams = new TextureLoader.TextureParameter();
-        borderTexParams.format = Pixmap.Format.Alpha;
-        borderTexParams.magFilter = Texture.TextureFilter.Linear;
-        borderTexParams.minFilter = Texture.TextureFilter.Linear;
-        assets.load(FILM_BORDER_TEXTURE, Texture.class, borderTexParams);
-
-        TextureLoader.TextureParameter noiseTexParams = new TextureLoader.TextureParameter();
-        noiseTexParams.format = Pixmap.Format.Alpha;
-        noiseTexParams.magFilter = Texture.TextureFilter.Nearest;
-        noiseTexParams.minFilter = Texture.TextureFilter.Nearest;
-        noiseTexParams.wrapU = Texture.TextureWrap.Repeat;
-        noiseTexParams.wrapV = Texture.TextureWrap.Repeat;
-        assets.load(FILM_NOISE_TEXTURE, Texture.class, noiseTexParams);
-
-        TextureLoader.TextureParameter scanlineTexParams = new TextureLoader.TextureParameter();
-        scanlineTexParams.format = Pixmap.Format.Alpha;
-        scanlineTexParams.magFilter = Texture.TextureFilter.Linear;
-        scanlineTexParams.minFilter = Texture.TextureFilter.Linear;
-        scanlineTexParams.wrapU = Texture.TextureWrap.Repeat;
-        scanlineTexParams.wrapV = Texture.TextureWrap.Repeat;
-        assets.load(SCANLINE_TEXTURE, Texture.class, scanlineTexParams);
-
-        assets.load(HELIX_MODEL, Model.class);
-        assets.load(BG_MODEL, Model.class);
-        assets.load(BG_BLOOM_MODEL, Model.class);
-
-        assets.finishLoading();
-
-        helixNormalAOTexture = assets.get(HELIX_NORMAL_AO_TEXTURE, Texture.class);
-        backgroundTexture = assets.get(BG_GLOW_TEXTURE, Texture.class);
-        backgroundBloomTexture = assets.get(BG_BLOOM_TEXTURE, Texture.class);
-        Texture filmNoiseTexture = assets.get(FILM_NOISE_TEXTURE, Texture.class);
-        Texture filmBorderTexture = assets.get(FILM_BORDER_TEXTURE, Texture.class);
-        Texture scanlineTexture = assets.get(SCANLINE_TEXTURE, Texture.class);
-
-        Model helixModel = assets.get(HELIX_MODEL, Model.class);
-        mainHelixModelInstance = new ModelInstance(helixModel);
+        mainHelixModelInstance = new ModelInstance(assets.helixModel);
         mainHelixModelInstance.userData = Settings.frontHelixColor;
         mainHelixTransformManager = new TransformManager(mainHelixModelInstance);
-        rearHelixModelInstance = new ModelInstance(helixModel);
+        rearHelixModelInstance = new ModelInstance(assets.helixModel);
         rearHelixModelInstance.userData = Settings.rearHelixColor;
         rearHelixTransformManager = new TransformManager(rearHelixModelInstance);
         rearHelixTransformManager.eulers.set(12.477f, -96.843f, -7.902f);
         rearHelixTransformManager.position.set(7.95135f,-5.46558f, 9.82413f);
 
-        Model bgModel = assets.get(BG_MODEL, Model.class);
-        backgroundModelInstance = new ModelInstance(bgModel);
+        backgroundModelInstance = new ModelInstance(assets.backgroundModel);
+        backgroundBloomModelInstance = new ModelInstance(assets.backgroundBloomModel);
 
-        Model bgBloomModel = assets.get(BG_BLOOM_MODEL, Model.class);
-        backgroundBloomModelInstance = new ModelInstance(bgBloomModel);
-
-        sssShader = new SubsurfaceScatteringShader(helixNormalAOTexture,(new Vector3(-0.6f, 1f, 1f)).nor());
+        sssShader = new SubsurfaceScatteringShader(assets, (new Vector3(-0.6f, 1f, 1f)).nor());
         sssShader.init();
         disposables.add(sssShader);
 
-        backgroundShader = new BackgroundShader(backgroundTexture);
+        backgroundShader = new BackgroundShader(assets);
         backgroundShader.init();
         disposables.add(backgroundShader);
 
-        unlitShader = new UnlitShader(backgroundBloomTexture);
+        unlitShader = new UnlitShader(assets);
         unlitShader.init();
         disposables.add(unlitShader);
 
-        blackShader = new BlackShader();
+        blackShader = new BlackShader(assets);
         blackShader.init();
         disposables.add(blackShader);
 
-        bloomShaderProgram = loadShaderProgram("bloom");
-        disposables.add(bloomShaderProgram);
+        particleATextureRegion = new TextureRegion(assets.particleATexture);
 
-        particleATexture = assets.get(PARTICLE_A_TEXTURE, Texture.class);
-        particleATextureRegion = new TextureRegion(particleATexture);
+        particles = new Particles(assets.pointParticleTexture, particleATextureRegion, cam);
 
-        particlePointTexture = assets.get(POINT_PARTICLE_TEXTURE, Texture.class);
-
-        particles = new Particles(particlePointTexture, particleATextureRegion, cam);
-        InputMultiplexer inputMultiplexer = new InputMultiplexer(inputAdapter, particles.inputAdapter);
+        FlippingInputMultiplexer inputMultiplexer = new FlippingInputMultiplexer(inputAdapter, particles.inputAdapter);
         Gdx.input.setInputProcessor(inputMultiplexer);
 
-        particleGroupStrategy = new ParticleGroupStrategy(cam);
+        particleGroupStrategy = new ParticleGroupStrategy(cam, assets);
         disposables.add(particleGroupStrategy);
 
         decalBatch = new DecalBatch(Particles.MAX_PARTICLES, particleGroupStrategy);
@@ -278,20 +200,17 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
         billboardDecalBatch = new BillboardDecalBatch(Particles.MAX_PARTICLES, particleGroupStrategy);
         disposables.add(billboardDecalBatch);
 
-        filmGrain = new FilmGrain(filmNoiseTexture, filmBorderTexture, scanlineTexture, false);
-        disposables.add(filmGrain);
-        filmGrainForBloom = new FilmGrain(filmNoiseTexture, filmBorderTexture, scanlineTexture, true);
-        disposables.add(filmGrainForBloom);
-	}
+        effectsOverlay = new EffectsOverlay(assets);
+        disposables.add(effectsOverlay);
 
-    private ShaderProgram loadShaderProgram (final String prefix){
-        String vert = Gdx.files.internal(prefix + "_vs.glsl").readString();
-        String frag = Gdx.files.internal(prefix + "_fs.glsl").readString();
-        ShaderProgram program = new ShaderProgram(vert, frag);
-        if (!program.isCompiled())
-            Gdx.app.log("Shader error", program.getLog());
-        return program;
-    }
+        chromaticBuffer =
+                new ResizableFrameBuffer(Pixmap.Format.RGBA8888, true, false, true);
+        disposables.add(chromaticBuffer);
+
+        chromaticQuad = new FullScreenQuad();
+        chromaticQuad.setBlending(false);
+        disposables.add(chromaticQuad);
+	}
 
     @Override
     public void dispose() {
@@ -323,24 +242,27 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
 
         if (particles != null) particles.setInputAdapterResolution(); //just in case
 
-        if (filmGrain!=null)
-            filmGrain.resize(width, height);
-
-        if (filmGrainForBloom!=null)
-            filmGrainForBloom.resize(width, height);
+        if (effectsOverlay !=null)
+            effectsOverlay.resize(width, height);
 
     }
 
     @Override
-    public void draw(float deltaTime, float xOffsetFake, float xOffsetLooping, float xOffsetSmooth, float yOffset) {
-        deltaTime = Math.min(deltaTime, MAX_FRAME_TIME);
+    public void render(float xOffset, float yOffset, float xOffsetLooping, float xOffsetFake) {
+        float deltaTime = Math.min(Gdx.graphics.getDeltaTime(), MAX_FRAME_TIME);
         if (screenshotPause)
             deltaTime = 0;
 
         float _xOffset = isPreview? 0.5f :
-                (Settings.pseudoScrolling? xOffsetFake :(Settings.smoothScrolling? xOffsetSmooth : xOffsetLooping));
+                (Settings.pseudoScrolling? xOffsetFake : xOffsetLooping);
+
+        if (Settings.flipH)
+            _xOffset = 1f - _xOffset;
 
         GL20 gl = Gdx.gl;
+
+        // Need to set winding order according to flipped camera
+        gl.glFrontFace(Settings.flipH != Settings.flipV ? GL20.GL_CW : GL20.GL_CCW);
 
         if (!firstFrameDrawn){
             gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -353,8 +275,7 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
         if (needFinishCreate){
             finishCreate();
             //film grain wasn't created til now so need to initialize its size
-            filmGrain.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-            filmGrainForBloom.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            effectsOverlay.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         }
 
         if (settingsAdapter != null) settingsAdapter.updateInLoop(deltaTime);
@@ -362,8 +283,8 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
         //UPDATES
         Texture.TextureFilter particleMinFilter = Settings.trilinearParticles ?
                 Texture.TextureFilter.MipMapLinearLinear : Texture.TextureFilter.MipMapLinearNearest;
-        particleATexture.setFilter(particleMinFilter, Texture.TextureFilter.Linear);
-        particlePointTexture.setFilter(particleMinFilter, Texture.TextureFilter.Linear);
+        assets.particleATexture.setFilter(particleMinFilter, Texture.TextureFilter.Linear);
+        assets.pointParticleTexture.setFilter(particleMinFilter, Texture.TextureFilter.Linear);
 
         mainHelixTransformManager.localEulers.z += deltaTime * MAIN_HELIX_ROTATION_DPS * Settings.speed;
         mainHelixTransformManager.apply();
@@ -385,15 +306,15 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
         cam.position.set(camPosition); //temporarily apply it to get correct direction with lookAt
         cam.lookAt(-.4703f, 0f, 3.5032f);
 
-        sssShader.lightDirection.set(1, 0, 0).rotate(Vector3.Y, lightH).rotate(Vector3.X, lightV);
+        sssShader.getLightDirection().set(1, 0, 0).rotate(Vector3.Y, lightH).rotate(Vector3.X, lightV);
 
-        particles.update(deltaTime, sssShader.lightDirection); //MUST BE DONE WHILE CAM IS IN POSITION
-
-        backgroundShader.color.set(Settings.backgroundColor);
+        particles.update(deltaTime, sssShader.getLightDirection()); //MUST BE DONE WHILE CAM IS IN POSITION
 
         //BLOOM SURFACE DRAWING
         if (Settings.bloom) {
             bloom.begin();
+            Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
             cam.position.set(0, 0, 0);
             cam.update();
             modelBatch.begin(cam);
@@ -412,20 +333,33 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
 
         //BLUR SURFACE DRAWING
         if (Settings.dof) {
-            rearDOFBlur.setClearColor(tmpColor.set(Settings.backgroundColor).mul(AMBIENT_BRIGHTNESS));
             rearDOFBlur.begin();
-            modelBatch.begin(cam);
-            modelBatch.render(backgroundModelInstance, backgroundShader);
-            modelBatch.end();
+            tmpColor.set(Settings.backgroundColor).mul(AMBIENT_BRIGHTNESS);
+            Gdx.gl.glClearColor(tmpColor.r, tmpColor.g, tmpColor.b, tmpColor.a);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
-            cam.position.set(camPosition);
-            cam.update();
-
-            sssShader.setShouldFadeEnds(true);
-            modelBatch.begin(cam);
-            modelBatch.render(rearHelixModelInstance, sssShader);
-            modelBatch.end();
+            drawBackground();
+            drawFar();
             rearDOFBlur.end();
+        }
+
+        //FOREGROUND SURFACE DRAWING
+        if (Settings.chromaticAberration) {
+            // Resize on demand so FrameBuffer is only created if setting is on.
+            int surfaceWidth, surfaceHeight;
+            if (Gdx.graphics.getWidth() > Gdx.graphics.getHeight()) {
+                surfaceWidth = Math.min(Gdx.graphics.getWidth(), 2048);
+                surfaceHeight = (int)(((float)surfaceWidth) / (float)Gdx.graphics.getWidth() * (float)Gdx.graphics.getHeight());
+            } else {
+                surfaceHeight = Math.min(Gdx.graphics.getHeight(), 2048);
+                surfaceWidth = (int)(((float)surfaceHeight) / (float)Gdx.graphics.getHeight() * (float)Gdx.graphics.getWidth());
+            }
+            chromaticBuffer.resize(surfaceWidth, surfaceHeight);
+
+            chromaticBuffer.getCurrent().begin();
+            // Black empty clear color. Result will be drawn to screen with pre-multiplied alpha.
+            Gdx.gl.glClearColor(0f, 0f, 0f, 0f);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         }
 
         //MAIN DRAWING
@@ -436,43 +370,62 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
         if (Settings.dof) {
             rearDOFBlur.render();
         } else {
-            modelBatch.begin(cam);
-            modelBatch.render(backgroundModelInstance, backgroundShader);
-            modelBatch.end();
+            drawFar();
         }
 
+        drawNear();
+
+        if (!Settings.dof) {
+            drawFar();
+        }
+        boolean doFilmGrain = Settings.filmGrain || Settings.scanLines || Settings.vignette;
+
+        if (doFilmGrain) {
+            effectsOverlay.render(Settings.bloom, bloom);
+        } else if (Settings.bloom) {
+            bloom.beginRender(assets.bloomShader);
+            bloom.finishRender();
+        }
+
+        if (Settings.chromaticAberration) {
+            chromaticBuffer.getCurrent().end();
+            ShaderProgram program = assets.chromaticAberrationShader;
+            program.bind();
+            program.setUniformi("u_texture", 0);
+            chromaticBuffer.getCurrent().getColorBufferTexture().bind(0);
+            chromaticQuad.render(assets.chromaticAberrationShader);
+        }
+
+
+        fader.render(deltaTime);
+
+    }
+
+    private void drawBackground() {
+        cam.position.set(0f, 0f, 0f);
+        cam.update();
+        modelBatch.begin(cam);
+        modelBatch.render(backgroundModelInstance, backgroundShader);
+        modelBatch.end();
+    }
+
+    private void drawFar() {
         cam.position.set(camPosition);
         cam.update();
+        sssShader.setShouldFadeEnds(true);
+        modelBatch.begin(cam);
+        modelBatch.render(rearHelixModelInstance, sssShader);
+        modelBatch.end();
+    }
 
+    private void drawNear() {
+        cam.position.set(camPosition);
+        cam.update();
         sssShader.setShouldFadeEnds(false);
         modelBatch.begin(cam);
         modelBatch.render(mainHelixModelInstance, sssShader);
         modelBatch.end();
-
-        if (!Settings.dof) {
-            sssShader.setShouldFadeEnds(true);
-            modelBatch.begin(cam);
-            modelBatch.render(rearHelixModelInstance, sssShader);
-            modelBatch.end();
-        }
-
-        boolean doFilmGrain = Settings.filmGrain || Settings.scanLines || Settings.vignette;
-
-        if (Settings.bloom) {
-            if (doFilmGrain){
-                bloom.setCustomShaderPreparer(filmGrainForBloom);
-                bloom.render(filmGrainForBloom.filmGrainShaderProgram);
-            } else {
-                bloom.setCustomShaderPreparer(null);
-                bloom.render(bloomShaderProgram);
-            }
-        } else if (doFilmGrain){
-            filmGrain.render();
-        }
-
         particles.draw(decalBatch, billboardDecalBatch);
-
-        fader.render(deltaTime);
     }
 
     float lightH = -90f, lightV = 38f;
@@ -484,27 +437,40 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
         boolean lightMode;
 
         public boolean keyDown (int keycode) {
-            if (keycode == Input.Keys.R){
-                sssShader.reloadShader();
-                backgroundShader.reloadShader();
-                {
-                    if (bloomShaderProgram != null) bloomShaderProgram.dispose();
-                    disposables.removeValue(bloomShaderProgram, true);
-                    bloomShaderProgram = loadShaderProgram("bloom");
-                    disposables.add(bloomShaderProgram);
-                }
-            } else if (keycode == Input.Keys.P){
-                screenshotPause = ! screenshotPause;
-            } else if (keycode == Input.Keys.SPACE){
-                Settings.advanceScreenshotResolution();
-            } else if (keycode == Input.Keys.C){
-                Settings.advanceScreenshotColor();
-            } else if (keycode == Input.Keys.V){
-                Settings.vignette = ! Settings.vignette;
-            } else if (keycode == Input.Keys.S){
-                Settings.scanLines = ! Settings.scanLines;
-            } else if (keycode == Input.Keys.F){
-                Settings.filmGrain = ! Settings.filmGrain;
+            switch (keycode) {
+                case Input.Keys.R:
+                    assets.reloadShaders();
+                    break;
+                case Input.Keys.P:
+                    screenshotPause = ! screenshotPause;
+                    break;
+                case Input.Keys.SPACE:
+                    Settings.advanceScreenshotResolution();
+                    break;
+                case Input.Keys.C:
+                    Settings.advanceScreenshotColor();
+                    break;
+                case Input.Keys.V:
+                    Settings.vignette = !Settings.vignette;
+                    break;
+                case Input.Keys.S:
+                    Settings.scanLines = !Settings.scanLines;
+                    break;
+                case Input.Keys.F:
+                    Settings.filmGrain = !Settings.filmGrain;
+                    break;
+                case Input.Keys.B:
+                    Settings.bloom = ! Settings.bloom;
+                    break;
+                case Input.Keys.A:
+                    Settings.chromaticAberration = !Settings.chromaticAberration;
+                    break;
+                case Input.Keys.K:
+                    Settings.flipH = !Settings.flipH;
+                    break;
+                case Input.Keys.L:
+                    Settings.flipV = !Settings.flipV;
+                    break;
             }
             return false;
         }
@@ -537,19 +503,8 @@ public class MainRenderer implements LiveWallpaperBaseRenderer {
     }
 
     @Override
-    public void onDoubleTap() {
-
-    }
-
-    @Override
-    public void onTripleTap() {
-
-    }
-
-    @Override
-    public void setIsPreview(boolean isPreview) {
+    public void onPreviewStateChange(boolean isPreview) {
         this.isPreview = isPreview;
     }
-
 
 }

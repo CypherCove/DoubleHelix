@@ -1,23 +1,18 @@
 package com.cyphercove.doublehelix.desktop;
 
-import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
-import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
-import com.cyphercove.lwptools.core.LiveWallpaperGameAdapter;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.cyphercove.covetools.android.DesktopLiveWallpaperWrapper;
 import com.cyphercove.doublehelix.MainRenderer;
 
 public class DesktopLauncher {
-    static final int MAX_FPS = 80;
 
 	public static void main (String[] arg) {
-		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-        config.vSyncEnabled = true;
-        config.r=8;
-        config.g=8;
-        config.b=8;
-        config.a=8;
-        config.width = 1280;
-        config.height = 720;
-        config.samples = 8;
-		new LwjglApplication(new LiveWallpaperGameAdapter(new MainRenderer(), null, MAX_FPS), config);
+		Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
+		config.useVsync(true);
+		config.setBackBufferConfig(8, 8, 8, 8, 16, 0, 8);
+		config.setWindowedMode(1280, 720);
+		new Lwjgl3Application(new DesktopLiveWallpaperWrapper(new MainRenderer()), config);
 	}
+
 }

@@ -24,6 +24,9 @@ import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.glutils.PixmapTextureData;
 import com.badlogic.gdx.utils.Disposable;
 
+/**
+ * A power function look-up table to use in shaders as an optimization.
+ */
 public class PowerLUT implements Disposable {
 	private Texture texture;
 	
@@ -50,7 +53,6 @@ public class PowerLUT implements Disposable {
 	public Texture getTexture(){
 		return texture;
 	}
-
 
 	@Override
 	public void dispose() {

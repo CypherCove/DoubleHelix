@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="about_message">© 2015-2020 Cypher Cove LLC
+      &lt;br/>&lt;br/>
+      Double Helix was built using the following &lt;a href=&quot;http://www.apache.org/licenses/LICENSE-2.0&quot;>Apache License 2.0&lt;/a>-licensed libraries:
+      &lt;br/>&lt;br/>
+      &#8226; &lt;a href=&quot;http://libgdx.badlogicgames.com/&quot;>libGDX&lt;/a>&lt;br/>
+      &#8226; &lt;a href=&quot;https://github.com/CypherCove/CoveTools&quot;>CoveTools&lt;/a>&lt;&lt;br/>
+      &#8226; &lt;a href=&quot;https://github.com/CypherCove/CovePrefs&quot;>CovePrefs&lt;/a>&lt;br/>
+      &#8226; &lt;a href=&quot;https://github.com/CypherCove/gdx-tween&quot;>gdx-tween&lt;/a>&lt;&lt;br/>
+      &#8226; &lt;a href=&quot;https://github.com/JakeWharton/timber&quot;>Timber&lt;/a>&lt;br/>
+    </string>
+
+    <string name="summ_other_wallpapers">on Amazon</string>
+</resources>

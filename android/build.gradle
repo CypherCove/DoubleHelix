@@ -1,44 +1,27 @@
+def signingProperties = new Properties()
+signingProperties.load(new FileInputStream(file('signing.properties')))
+
 android {
-    buildToolsVersion "22.0.1"
-    compileSdkVersion 22
+    compileSdkVersion 30
 
     defaultConfig {
         applicationId "com.cyphercove.doublehelix"
-        versionCode 6
-        versionName "1.0.2"
-        minSdkVersion 9
-        targetSdkVersion 22
-    }
-
-    productFlavors {
-        paid {
-            applicationId "com.cyphercove.doublehelix"
-            buildConfigField 'boolean', 'PAID', 'true'
-            buildConfigField 'boolean', 'AMAZON', 'false'
-        }
-
-        free {
-            applicationId "com.cyphercove.doublehelixfree"
-            buildConfigField 'boolean', 'PAID', 'false'
-            buildConfigField 'boolean', 'AMAZON', 'false'
-        }
-
-        paidamazon {
-            applicationId "com.cyphercove.doublehelix"
-            buildConfigField 'boolean', 'PAID', 'true'
-            buildConfigField 'boolean', 'AMAZON', 'true'
-        }
-
+        minSdkVersion 16
+        targetSdkVersion 30
+        versionCode 9
+        versionName "1.0.5"
+        vectorDrawables.useSupportLibrary = true
+        multiDexEnabled true
     }
 
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
-            java.srcDirs = ['src', '../../LWPTools/android-src']
-            aidl.srcDirs = ['src']
+            java.srcDirs = ['src']
             renderscript.srcDirs = ['src']
             res.srcDirs = ['res']
             assets.srcDirs = ['assets']
+            jni.srcDirs = []
             jniLibs.srcDirs = ['libs']
         }
 
@@ -46,31 +29,120 @@ android {
             res.srcDirs = ['res-free']
         }
 
-        instrumentTest.setRoot('tests')
+        amazon {
+            res.srcDirs = ['res-amazon']
+        }
+    }
+    packagingOptions {
+        exclude 'META-INF/robovm/ios/robovm.xml'
+    }
+
+    flavorDimensions 'storefront', 'content'
+
+    productFlavors {
+
+        googleplay {
+            dimension "storefront"
+            buildConfigField "String", "STOREFRONT", '"googleplay"'
+            buildConfigField "String", "APP_STORE_LINK_PREFIX", '"http://play.google.com/store/apps/details?id="'
+            buildConfigField "String", "BACKUP_APP_STORE_LINK_PREFIX", '""'
+            buildConfigField "String", "COMPANY_STORE_LINK", '"http://play.google.com/store/apps/dev?id=9185389251891875863"'
+            buildConfigField "String", "BACKUP_COMPANY_STORE_LINK", '""'
+            buildConfigField "String", "PREMIUM_APPLICATION_ID", '"com.cyphercove.doublehelix"'
+        }
+
+        amazon {
+            dimension "storefront"
+            buildConfigField "String", "STOREFRONT", '"amazon"'
+            buildConfigField "String", "APP_STORE_LINK_PREFIX", '"amzn://apps/android?p="'
+            buildConfigField "String", "BACKUP_APP_STORE_LINK_PREFIX", '"http://www.amazon.com/gp/mas/dl/android?p="'
+            buildConfigField "String", "COMPANY_STORE_LINK", '"amzn://apps/android?p=com.cyphercove.doublehelix&showAll=1"'
+            buildConfigField "String", "BACKUP_COMPANY_STORE_LINK", '"http://www.amazon.com/gp/mas/dl/android?p=com.cyphercove.doublehelix&showAll=1"'
+            buildConfigField "String", "PREMIUM_APPLICATION_ID", '"com.cyphercove.doublehelix"'
+        }
+
+        free {
+            dimension "content"
+            applicationId "com.cyphercove.doublehelixfree"
+            buildConfigField "boolean", "PREMIUM", "false"
+        }
+
+        premium {
+            dimension "content"
+            applicationId "com.cyphercove.doublehelix"
+            buildConfigField "boolean", "PREMIUM", "true"
+        }
+
+    }
+
+    signingConfigs {
+        release {
+            storeFile file(signingProperties['storeFile'])
+            storePassword signingProperties['storePassword']
+            keyAlias signingProperties['keyAlias']
+            keyPassword signingProperties['keyPassword']
+        }
+    }
+
+    buildTypes {
+
+        debug {
+            minifyEnabled false
+            signingConfig signingConfigs.debug
+            debuggable true
+            zipAlignEnabled true
+        }
+
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+            debuggable false
+            zipAlignEnabled true
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
     }
 }
-
 
 // called every time gradle gets executed, takes the native dependencies of
 // the natives configuration, and extracts them to the proper libs/ folders
 // so they get packed with the APK.
-task copyAndroidNatives() { 
-    file("libs/armeabi/").mkdirs();
-    file("libs/armeabi-v7a/").mkdirs();
-    file("libs/x86/").mkdirs();
+task copyAndroidNatives {
+    doFirst {
+        file("libs/armeabi/").mkdirs()
+        file("libs/armeabi-v7a/").mkdirs()
+        file("libs/arm64-v8a/").mkdirs()
+        file("libs/x86_64/").mkdirs()
+        file("libs/x86/").mkdirs()
 
-    configurations.natives.files.each { jar ->
-        def outputDir = null
-        if(jar.name.endsWith("natives-armeabi-v7a.jar")) outputDir = file("libs/armeabi-v7a")
-        if(jar.name.endsWith("natives-armeabi.jar")) outputDir = file("libs/armeabi")
-        if(jar.name.endsWith("natives-x86.jar")) outputDir = file("libs/x86")
-        if(outputDir != null) {
-            copy {
-                from zipTree(jar)
-                into outputDir
-                include "*.so"
+        configurations.natives.files.each { jar ->
+            def outputDir = null
+            if (jar.name.endsWith("natives-arm64-v8a.jar")) outputDir = file("libs/arm64-v8a")
+            if (jar.name.endsWith("natives-armeabi-v7a.jar")) outputDir = file("libs/armeabi-v7a")
+            if(jar.name.endsWith("natives-armeabi.jar")) outputDir = file("libs/armeabi")
+            if(jar.name.endsWith("natives-x86_64.jar")) outputDir = file("libs/x86_64")
+            if(jar.name.endsWith("natives-x86.jar")) outputDir = file("libs/x86")
+            if(outputDir != null) {
+                copy {
+                    from zipTree(jar)
+                    into outputDir
+                    include "*.so"
+                }
             }
         }
+    }
+}
+
+tasks.whenTaskAdded { packageTask ->
+    if (packageTask.name.contains("package")) {
+        packageTask.dependsOn 'copyAndroidNatives'
     }
 }
 
@@ -93,45 +165,14 @@ task run(type: Exec) {
     }
 
     def adb = path + "/platform-tools/adb"
-    commandLine "$adb", 'shell', 'am', 'start', '-n', 'com.cyphercove.doublehelix.android/com.cyphercove.doublehelix.android.AndroidLauncher'
-}
-
-// sets up the Android Eclipse project, using the old Ant based build.
-eclipse {
-    // need to specify Java source sets explicitely, SpringSource Gradle Eclipse plugin
-    // ignores any nodes added in classpath.file.withXml
-    sourceSets {
-        main {
-            java.srcDirs "src", 'gen'
-        }
-    }
-
-    jdt {
-        sourceCompatibility = 1.6
-        targetCompatibility = 1.6
-    }
-
-    classpath {
-        plusConfigurations += [ project.configurations.compile ]        
-        containers 'com.android.ide.eclipse.adt.ANDROID_FRAMEWORK', 'com.android.ide.eclipse.adt.LIBRARIES'       
-    }
-
-    project {
-        name = appName + "-android"
-        natures 'com.android.ide.eclipse.adt.AndroidNature'
-        buildCommands.clear();
-        buildCommand "com.android.ide.eclipse.adt.ResourceManagerBuilder"
-        buildCommand "com.android.ide.eclipse.adt.PreCompilerBuilder"
-        buildCommand "org.eclipse.jdt.core.javabuilder"
-        buildCommand "com.android.ide.eclipse.adt.ApkBuilder"
-    }
+    commandLine "$adb", 'shell', 'am', 'start', '-n', 'com.cyphercove.audioglow.android/com.cyphercove.doublehelix.InfoActivity'
 }
 
 // sets up the Android Idea project, using the old Ant based build.
 idea {
     module {
         sourceDirs += file("src");
-        scopes = [ COMPILE: [plus:[project.configurations.compile]]]        
+        scopes = [ COMPILE: [plus:[project.configurations.compile]]]
 
         iml {
             withXml {

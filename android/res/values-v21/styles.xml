@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2007 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+  
+          http://www.apache.org/licenses/LICENSE-2.0
+  
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+
+<resources>
+    <color name="tinted_button_text_color">#ffffff</color>
+
+    <style name="SettingsAlertDialogTheme" parent="Theme.AppCompat.Dialog.Alert">
+        <item name="colorPrimary">@color/prefs_colorPrimary</item>
+        <item name="colorPrimaryDark">@color/prefs_colorPrimaryDark</item>
+        <item name="colorAccent">@color/prefs_colorAccent</item>
+        <item name="colorControlActivated">@color/prefs_colorControlActivated</item>
+        <item name="colorControlHighlight">@color/prefs_colorControlHighlight</item>
+        <item name="android:background">@color/prefs_bg</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+    </style>
+
+    <style name="PreferencesTheme" parent="BasePreferencesTheme">
+        <item name="android:alertDialogTheme">@style/SettingsAlertDialogTheme</item>
+    </style>
+</resources>

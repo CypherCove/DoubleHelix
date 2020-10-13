@@ -23,7 +23,6 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.GroupStrategy;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.cyphercove.doublehelix.points.BillboardDecal;
@@ -31,23 +30,23 @@ import com.cyphercove.doublehelix.points.BillboardGroupStrategy;
 
 import java.util.Comparator;
 
-/**
- * Created by Darren on 7/20/2015.
- */
 public class ParticleGroupStrategy implements GroupStrategy, BillboardGroupStrategy, Disposable {
+//    private static final int GROUP_BLUR_ONLY = 0;
+//    private static final int GROUP_DOF = 1;
+//    private static final int GROUP_NO_DOF = 2;
 
     private static final float WHITENESS = 0.4f;
 
     private Camera camera;
-    private ShaderProgram shader;
-    private ShaderProgram billboardShader;
+    private Assets assets;
     private final Comparator<Decal> cameraSorter;
     private final Comparator<BillboardDecal> billboardCameraSorter;
 
     final Color tmpColor = new Color();
 
-    public ParticleGroupStrategy(final Camera camera) {
+    public ParticleGroupStrategy(final Camera camera, Assets assets) {
         this.camera = camera;
+        this.assets = assets;
 
         cameraSorter = new Comparator<Decal>() {
             @Override
@@ -63,31 +62,16 @@ public class ParticleGroupStrategy implements GroupStrategy, BillboardGroupStrat
             }
         };
 
-        loadShaders();
-    }
-
-    public void reloadShaders(){
-        shader.dispose();
-        billboardShader.dispose();
-        loadShaders();
-    }
-
-    private void loadShaders (){
-        shader = loadShader("particle");
-        billboardShader = loadShader("billboardParticle");
-    }
-
-    private ShaderProgram loadShader(String prefix){
-        String vert = Gdx.files.internal(prefix + "_vs.glsl").readString();
-        String frag = Gdx.files.internal(prefix + "_fs.glsl").readString();
-        ShaderProgram shaderProgram = new ShaderProgram(vert, frag);
-        if (!shaderProgram.isCompiled())
-            Gdx.app.log("Shader error", shaderProgram.getLog());
-        return shaderProgram;
     }
 
     @Override
     public int decideGroup (Decal decal) {
+//        if (!Settings.depthOfField)
+//            return GROUP_NO_DOF;
+//        if (forceBlurOnly)
+//            return GROUP_BLUR_ONLY;
+//        return (decal.getPosition().dst(cameraPosition) < BLUR_ONLY_DISTANCE) ?
+//                GROUP_DOF : GROUP_BLUR_ONLY;
         return 1;
     }
 
@@ -104,7 +88,8 @@ public class ParticleGroupStrategy implements GroupStrategy, BillboardGroupStrat
 
         tmpColor.set(Settings.backgroundColor).lerp(Color.WHITE, WHITENESS);
 
-        shader.begin();
+        ShaderProgram shader = assets.particleShader;
+        shader.bind();
         shader.setUniformMatrix("u_projTrans", camera.combined);
         shader.setUniformi("u_texture", 0);
         shader.setUniformf("u_baseColor", tmpColor);
@@ -118,7 +103,8 @@ public class ParticleGroupStrategy implements GroupStrategy, BillboardGroupStrat
 
         tmpColor.set(Settings.backgroundColor).lerp(Color.WHITE, WHITENESS);
 
-        billboardShader.begin();
+        ShaderProgram billboardShader = assets.billboardParticleShader;
+        billboardShader.bind();
         billboardShader.setUniformMatrix("u_projTrans", camera.combined);
         billboardShader.setUniformi("u_texture", 0);
         billboardShader.setUniformf("u_baseColor", tmpColor);
@@ -126,12 +112,10 @@ public class ParticleGroupStrategy implements GroupStrategy, BillboardGroupStrat
 
     @Override
     public void afterGroup (int group) {
-        shader.end();
     }
 
     @Override
     public void afterBillboardGroup (int group) {
-        billboardShader.end();
     }
 
     @Override
@@ -160,17 +144,33 @@ public class ParticleGroupStrategy implements GroupStrategy, BillboardGroupStrat
 
     @Override
     public ShaderProgram getGroupShader (int group) {
-        return shader;
+//        switch (group){
+//            case GROUP_NO_DOF:
+//                return noDOFShader;
+//            case GROUP_BLUR_ONLY:
+//                return blurOnlyShader;
+//            case GROUP_DOF:
+//            default:
+//                return dofShader;
+//        }
+        return assets.particleShader;
     }
 
     @Override
     public ShaderProgram getBillboardGroupShader (int group) {
-        return billboardShader;
+//        switch (group){
+//            case GROUP_NO_DOF:
+//                return noDOFShader;
+//            case GROUP_BLUR_ONLY:
+//                return blurOnlyShader;
+//            case GROUP_DOF:
+//            default:
+//                return dofShader;
+//        }
+        return assets.billboardParticleShader;
     }
 
     @Override
     public void dispose () {
-        if (shader != null) shader.dispose();
-        if (billboardShader != null) billboardShader.dispose();
     }
 }

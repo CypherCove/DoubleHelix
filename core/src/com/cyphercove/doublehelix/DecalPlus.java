@@ -18,9 +18,6 @@ package com.cyphercove.doublehelix;
 
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 
-/**
- * Created by Darren on 9/20/2015.
- */
 public class DecalPlus extends Decal {
     public float cameraDistance;
 }

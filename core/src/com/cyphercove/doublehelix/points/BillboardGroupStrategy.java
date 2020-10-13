@@ -19,15 +19,30 @@ package com.cyphercove.doublehelix.points;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.Array;
 
-/**
- * Created by Darren on 9/20/2015.
- */
 public interface BillboardGroupStrategy {
 
-    ShaderProgram getBillboardGroupShader (int group);
-    int decideBillboardGroup (BillboardDecal decal);
-    void beforeBillboardGroup (int group, Array<BillboardDecal> contents);
-    void afterBillboardGroup (int group);
-    void beforeBillboardGroups ();
-    void afterBillboardGroups ();
+    public ShaderProgram getBillboardGroupShader (int group);
+
+    /** Assigns a group to a decal
+     *
+     * @param decal BillboardDecal to assign group to
+     * @return group assigned */
+    public int decideBillboardGroup (BillboardDecal decal);
+
+    /** Invoked directly before rendering the contents of a group
+     *
+     * @param group Group that will be rendered
+     * @param contents Array of entries of arrays containing all the decals in the group */
+    public void beforeBillboardGroup (int group, Array<BillboardDecal> contents);
+
+    /** Invoked directly after rendering of a group has completed
+     *
+     * @param group Group which completed rendering */
+    public void afterBillboardGroup (int group);
+
+    /** Invoked before rendering any group */
+    public void beforeBillboardGroups ();
+
+    /** Invoked after having rendered all groups */
+    public void afterBillboardGroups ();
 }

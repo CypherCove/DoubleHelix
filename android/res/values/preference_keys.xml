@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources
+        xmlns:tools="http://schemas.android.com/tools"
+        tools:ignore="MissingTranslation">
+
+    <string name="key_settings_category">settings_category</string>
+    <string name="key_about_category">about_category</string>
+
+    <string name="key_rated">ratePressed</string>
+    <string name="key_upsell">upsell</string>
+    <string name="key_about">about</string>
+    <string name="key_other_apps">otherApps</string>
+    <string name="key_scene_color">sceneColor2</string>
+    <string name="key_depth_of_field">depthOfField</string>
+    <string name="key_bloom">bloom</string>
+    <string name="key_film_grain">filmGrain</string>
+    <string name="key_scan_lines">scanLines</string>
+    <string name="key_vignette">vignette</string>
+    <string name="key_chromatic_aberration">chromaticAberration</string>
+    <string name="key_flip_horizontal">flipH</string>
+    <string name="key_flip_vertical">flipV</string>
+    <string name="key_particle_count">particleCount</string>
+    <string name="key_rotation_speed">rotationSpeed</string>
+    <string name="key_trilinear">trilinear</string>
+    <string name="key_psuedo_scrolling">pseudoScrolling</string>
+    <string name="key_triple_tap">tripleTap</string>
+
+</resources>

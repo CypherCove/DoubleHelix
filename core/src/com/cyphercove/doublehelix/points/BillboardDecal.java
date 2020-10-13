@@ -18,21 +18,16 @@ package com.cyphercove.doublehelix.points;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g3d.decals.DecalMaterial;
+import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.NumberUtils;
 
-/**
- * Created by Darren on 9/20/2015.
- */
 public class BillboardDecal {
     // 3(x,y,z) + 1(color) + +1(size) + 1(angle)
     /** Size of a decal vertex in floats */
     public static final int VERTEX_SIZE = 3 + 1 + 1 + 1;
-
-    /** Temporary vector for various calculations. */
-    private static Vector3 tmp = new Vector3();
-    private static Vector3 tmp2 = new Vector3();
 
     /** Set a multipurpose value which can be queried and used for things like group identification. */
     public int value;

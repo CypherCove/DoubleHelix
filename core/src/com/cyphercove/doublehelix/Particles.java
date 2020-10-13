@@ -30,9 +30,6 @@ import com.cyphercove.doublehelix.points.BillboardDecalBatch;
 
 import java.util.Random;
 
-/**
- * Created by Darren on 9/7/2015.
- */
 public class Particles {
     public static final int MAX_PARTICLES = 1000;
     private Array<Particle> particles = new Array<Particle>(MAX_PARTICLES);

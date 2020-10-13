@@ -16,43 +16,31 @@
 
 package com.cyphercove.doublehelix;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.Shader;
 import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
-import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
 
+/**
+ * Used to draw a model pure black (the silhouette used for generating bloom lighting).
+ */
 public class BlackShader implements Shader {
-	ShaderProgram program;
+	private Assets assets;
+	private final Matrix4 tmpMat = new Matrix4();
+	private final Matrix4 viewProjTrans = new Matrix4();
 
-	int u_modelViewProjTrans;
+	public BlackShader(Assets assets) {
+		this.assets = assets;
+	}
 
 	@Override
 	public void init() {
-		reloadShader();
 	}
-
-    public void reloadShader (){
-        if (program != null)
-            program.dispose();
-
-        final String prefix = "black";
-        String vert = Gdx.files.internal(prefix + "_vs.glsl").readString();
-        String frag = Gdx.files.internal(prefix + "_fs.glsl").readString();
-        program = new ShaderProgram(vert, frag);
-		if (!program.isCompiled())
-			Gdx.app.log("Shader error", program.getLog());
-
-        u_modelViewProjTrans = program.getUniformLocation("u_modelViewProjTrans");
-    }
 
 	@Override
 	public void dispose() {
-		program.dispose();
 	}
 
 	@Override
@@ -66,14 +54,12 @@ public class BlackShader implements Shader {
 	}
 
 
-	Matrix4 tmpMat = new Matrix4();
-	Matrix4 viewProjTrans = new Matrix4();
 
 	@Override
 	public void begin(Camera camera, RenderContext context) {
         context.setDepthTest(GL20.GL_NONE);
 
-		program.begin();
+		assets.blackShader.bind();
 		viewProjTrans.set(camera.combined);
 
 		context.setCullFace(GL20.GL_BACK);
@@ -81,19 +67,15 @@ public class BlackShader implements Shader {
 
 	}
 
+
 	@Override
 	public void render(Renderable renderable) {
 		tmpMat.set(renderable.worldTransform).mulLeft(viewProjTrans);
-		program.setUniformMatrix(u_modelViewProjTrans, tmpMat);
-
-		renderable.mesh.render(program,
-				renderable.primitiveType,
-				renderable.meshPartOffset,
-				renderable.meshPartSize);
+		assets.blackShader.setUniformMatrix("u_modelViewProjTrans", tmpMat);
+		renderable.meshPart.render(assets.blackShader);
 	}
 
 	@Override
 	public void end() {
-		program.end();
 	}
 }

@@ -26,9 +26,6 @@ import com.cyphercove.doublehelix.points.BillboardDecal;
 
 import java.util.Random;
 
-/**
- * Created by Darren on 9/7/2015.
- */
 public class Particle {
     public final Vector3 center = new Vector3();
     public final Vector3 originalCenter = new Vector3();
@@ -221,6 +218,7 @@ public class Particle {
         //alpha is only used as the decal goes unfocused. When fully unfocused, the brightness is
         //evenly spread across the larger area of the sprite. Brightness can be more than 1 before
         //clamping because of HDR specular.
+        //TODO this should be calculated from unprojected sizes, not projected sizes.
         float alpha = ageFade * Math.min(1f, //Clamp color down to one
                 Math.max(1, totalBrightness) * //HDR brightness
                         Interpolation.linear.apply(BASE_SIZE_SQUARED, (squeezedBaseSize * squeezedBaseSize), unfocus) / (size * size)); //size ratio of focused to unfocused sprite.
@@ -314,7 +312,7 @@ public class Particle {
         TMPV.sub(projectedLight).nor(); //screen space light-to-cell vector
         TMPV2.set(0, 1f, 0).rotate(angle2d, 0, 0, -1f); //sprite angle in 2D (-1 z matches camera.direction used to rotate decal at end of this method)
         float specularAlignment = Math.abs(TMPV.x * TMPV2.x + TMPV.y * TMPV2.y); //dot product of rotation direction and vector to light
-        specularAlignment = Power.table[(int)Math.min(Power.COUNT-1, specularAlignment * Power.COUNT)];
+        specularAlignment = Power.table[(int)Math.min(Power.COUNT-1, specularAlignment * Power.COUNT)];//(float)Math.pow(specularAlignment, SPECULAR_POWER);
 
         float specularSineParameter = frequency * age + phase + SPECULAR_PHASE_SHIFT;
         float specular = (specularSineParameter-1.5f*MathUtils.PI) % PI4 < MathUtils.PI2 ? specularAlignment *

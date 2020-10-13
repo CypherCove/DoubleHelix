@@ -21,7 +21,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 
 /**
- * Created by Darren on 9/3/2015.
+ * Tracks the model transform for a model instance.
  */
 public class TransformManager {
 

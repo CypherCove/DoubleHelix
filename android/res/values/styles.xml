@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright 2015 Cypher Cove LLC
+<!-- Copyright (C) 2007 The Android Open Source Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
      You may obtain a copy of the License at
-
+  
           http://www.apache.org/licenses/LICENSE-2.0
-
+  
      Unless required by applicable law or agreed to in writing, software
      distributed under the License is distributed on an "AS IS" BASIS,
      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,6 +15,24 @@
 -->
 
 <resources>
-    <style name="StandardThemeSelector" parent="android:Theme">
+    <color name="tinted_button_text_color">#000000</color>
+    <color name="prefs_bg">#141829</color>
+    <color name="prefs_colorPrimary">#1A237E</color>
+    <color name="prefs_colorPrimaryDark">#10154D</color>
+    <color name="prefs_colorAccent">#E27929</color>
+    <color name="prefs_colorControlActivated">#DD8142</color>
+    <color name="prefs_colorControlHighlight">#1A237E</color>
+
+    <style name="BasePreferencesTheme" parent="Theme.AppCompat">
+        <item name="colorPrimary">@color/prefs_colorPrimary</item>
+        <item name="colorPrimaryDark">@color/prefs_colorPrimaryDark</item>
+        <item name="colorAccent">@color/prefs_colorAccent</item>
+        <item name="colorControlActivated">@color/prefs_colorControlActivated</item>
+        <item name="android:windowBackground">@color/prefs_bg</item>
+        <item name="colorButtonNormal">@color/prefs_colorPrimary</item>
+        <item name="colorControlHighlight">@color/prefs_colorControlHighlight</item>
     </style>
+
+    <style name="PreferencesTheme" parent="BasePreferencesTheme">
+    </style>  <!-- Holo doesn't style dialog backgrounds nicely. Only style the dialog in v21+ -->
 </resources>

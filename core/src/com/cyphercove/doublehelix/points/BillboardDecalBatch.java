@@ -21,6 +21,8 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
+import com.badlogic.gdx.graphics.g3d.decals.Decal;
+import com.badlogic.gdx.graphics.g3d.decals.DecalMaterial;
 import com.badlogic.gdx.graphics.g3d.decals.GroupStrategy;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.Array;
@@ -29,7 +31,7 @@ import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.SortedIntList;
 
 /**
- * Created by Darren on 9/20/2015.
+ * Clone of libGDX's DecalBatch with additional vertex attributes.
  */
 public class BillboardDecalBatch implements Disposable {
     public static final String SIZE_ATTRIBUTE = "a_size";

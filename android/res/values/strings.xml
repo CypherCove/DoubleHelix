@@ -1,35 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright 2015 Cypher Cove LLC
-
-     Licensed under the Apache License, Version 2.0 (the "License");
-     you may not use this file except in compliance with the License.
-     You may obtain a copy of the License at
-
-          http://www.apache.org/licenses/LICENSE-2.0
-
-     Unless required by applicable law or agreed to in writing, software
-     distributed under the License is distributed on an "AS IS" BASIS,
-     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     See the License for the specific language governing permissions and
-     limitations under the License.
--->
-
 <resources>
 
     <string name="app_name">Double Helix</string>
     <string name="prefs_name">Double Helix Settings</string>
     <string name="wallpaper_chooser_toast">Select Double Helix</string>
-    <string name="no_live_wallpapers_toast">This device does not support live wallpapers!</string>
+    <string name="no_live_wallpapers_toast">This device does not support live wallpapers.</string>
     <string name="wp_description">Building blocks of life</string>
 
-	<string name="about_message">© 2015 Cypher Cove LLC
-    &lt;br>
-    &lt;br>
-    Double Helix was built using &lt;a href=&quot;http://libgdx.badlogicgames.com/&quot;>LibGDX&lt;/a>,
-    which is covered by the &lt;a href=&quot;http://www.apache.org/licenses/LICENSE-2.0&quot;>Apache License 2.0&lt;/a>.
-    &lt;br>
-    &lt;br>
-    Google Play is a trademark of Google Inc.</string>
+	<string name="about_message">© 2015-2020 Cypher Cove LLC
+      &lt;br/>&lt;br/>
+      Double Helix was built using the following &lt;a href=&quot;http://www.apache.org/licenses/LICENSE-2.0&quot;>Apache License 2.0&lt;/a>-licensed libraries:
+      &lt;br/>&lt;br/>
+      &#8226; &lt;a href=&quot;http://libgdx.badlogicgames.com/&quot;>libGDX&lt;/a>&lt;br/>
+      &#8226; &lt;a href=&quot;https://github.com/CypherCove/CoveTools&quot;>CoveTools&lt;/a>&lt;&lt;br/>
+      &#8226; &lt;a href=&quot;https://github.com/CypherCove/CovePrefs&quot;>CovePrefs&lt;/a>&lt;br/>
+      &#8226; &lt;a href=&quot;https://github.com/CypherCove/gdx-tween&quot;>gdx-tween&lt;/a>&lt;&lt;br/>
+      &#8226; &lt;a href=&quot;https://github.com/JakeWharton/timber&quot;>Timber&lt;/a>&lt;br/>
+      Google Play is a trademark of Google Inc.
+    </string>
 
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
@@ -45,8 +33,9 @@
     <string name="plugged_selected">Plugged in</string>
     <string name="unplugged_selected">Unplugged</string>
 
-    <string name="get_paid">Get Double Helix full version</string>
-    <string name="summ_get_paid">Unlocks all settings!</string>
+    <string name="get_premium">Get Double Helix full version</string>
+    <string name="summ_get_premium">Unlocks all settings!</string>
+    <string name="no_store">Store app not found</string>
 
     <string name="cat_settings">Settings</string>
     <string name="cat_about">About</string>
@@ -60,7 +49,7 @@
     <string name="depth_of_field">Depth of field</string>
     <string name="summ_depth_of_field">Blur distant objects</string>
     <string name="particle_count">Particle count</string>
-    <string name="particle_count_min">Zero</string>
+    <string name="particle_count_min">None</string>
     <string name="particle_count_max">1000</string>
     <string name="speed">Rotation speed</string>
     <string name="speed_min">Min</string>
@@ -71,8 +60,12 @@
     <string name="film_grain">Film grain</string>
     <string name="scan_lines">Scan lines</string>
     <string name="vignette">Vignette</string>
+    <string name="chromatic_aberration">Chromatic aberration</string>
+    <string name="summ_chromatic_aberration">May affect performance</string>
     <string name="trilinear">Trilinear particle filtering</string>
     <string name="summ_trilinear">Smoother particle size transitions. May affect performance.</string>
+    <string name="flipH">Flip scene horizontally</string>
+    <string name="flipV">Flip scene vertically</string>
 
     <string name="pseudoscrolling">Pseudo-scrolling</string>
     <string name="summ_pseudoscrolling">Enable scrolling of the scene in any launcher</string>
